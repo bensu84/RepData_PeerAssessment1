@@ -1,20 +1,90 @@
+---
+output: pdf_document
+---
 # Reproducible Research: Peer Assessment 1
 
 
 ## Loading and preprocessing the data
 
-
+Reading the data:
+```{r}
+activityData <- read.csv('activity.csv')
+completeActivityData <- activityData[complete.cases(activityData),]
+dailyActivity <- split(activityData, activityData$date)
+intervalActivity <- split(activityData, activityData$interval)
+```
 
 ## What is mean total number of steps taken per day?
 
+```{r}
+  dailySteps <- numeric()
+  trash <- lapply(dailyActivity, function(x){
+        ds <-sum(x$steps)
+        dailySteps <<- c(dailySteps, ds)
+        sum(x$steps)
+        })
+  hist(dailySteps, main = "Histogram of the total numbers of daily steps")
+```
 
+For mean and median computation we use.
+```{r} 
+mean(dailySteps, na.rm=TRUE)
+median(dailySteps, na.rm=TRUE)
+```
 
 ## What is the average daily activity pattern?
 
+```{r}
+  intervalSteps <-numeric()
+  trash <- lapply(intervalActivity, function(x){
+                  intervalSteps <<- c(intervalSteps, mean(x$steps, na.rm=TRUE))
+                  })
+    plot(unique(activityData$interval), intervalSteps, type='l', xlab ="interval", ylab = "mean step number", main="timeseries plot of mean steps per interval")
+```
 
 
 ## Imputing missing values
 
+Handling missing values:
+Calculation of rows with `NA` values:
+```{r}
+  rowsWithNa <- nrow(activityData) - nrow(completeActivityData)
+  rowsWithNa
+```
 
+We reset the missing values with the mean of the respective 5 minute interval
+
+```{r}
+  newActivityData <- activityData
+  naVec <- is.na(newActivityData)
+  intervalIdx <- newActivityData[naVec, "interval"]
+  newActivityData[naVec,"steps"] <- intervalSteps[intervalIdx/5 +1]
+```
+
+
+Histogram of steps taken per day:
+```{r}
+  newDailySteps <- numeric()
+  newDailyActivity <- split(newActivityData, newActivityData$date)
+  trash <- lapply(newDailyActivity, function(x){
+        ds <-sum(x$steps)
+        newDailySteps <<- c(newDailySteps, ds)
+        })
+  hist(newDailySteps, main = "Histogram of the total numbers of daily steps using the added values")
+```
+
+Let us calculate the daily mean and the median of the steps:
+```{r} 
+mean(newDailySteps, na.rm=TRUE)
+median(newDailySteps, na.rm=TRUE)
+```
 
 ## Are there differences in activity patterns between weekdays and weekends?
+
+```{r}
+  newActivityData$dayType <- as.factor(ifelse(weekdays( as.Date(newActivityData$date)) %in% c("Saturday","Sunday"), "Weekend", "Weekday"))
+  #panel.xyplot(steps~interval|dayType, newActivityData)
+  #densityplot(~steps|dayType, newActivityData)
+
+```
+
