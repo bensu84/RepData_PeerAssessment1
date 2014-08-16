@@ -59,7 +59,7 @@ plot(unique(activityData$interval), intervalSteps, type='l', xlab ="interval", y
 
 Find the Interval with the maximum Number of steps:
 ```{r}
-unique(activityData$interval[which(intervalSteps == max(intervalSteps))])
+unique(activityData$interval)[which(intervalSteps == max(intervalSteps))]
 
 ```
 
@@ -76,8 +76,7 @@ unique(activityData$interval[which(intervalSteps == max(intervalSteps))])
 
 First we calculate the number of rows with `NA` values:
 ```{r}
-rowsWithNa <- nrow(activityData) - nrow(completeActivityData)
-rowsWithNa
+sum(!complete.cases(activityData))
 ```
 
 We impute the missing values with the mean, among all days, of the respective 5 minute interval.
