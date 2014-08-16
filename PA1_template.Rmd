@@ -16,8 +16,7 @@ Reading the data:
 ```{r}
 activityData <- read.csv('activity.csv')
 completeActivityData <- activityData[complete.cases(activityData),]
-dailyActivity <- split(completeActivityData, completeActivityData$date)
-dailyActivity1 <- split(activityData, activityData$date)
+dailyActivity <- split(activityData, activityData$date)
 intervalActivity <- split(activityData, activityData$interval)
 ```
 
@@ -30,58 +29,74 @@ intervalActivity <- split(activityData, activityData$interval)
 
 
 ```{r}
-  dailySteps <- unlist(lapply(dailyActivity, function(x){
-          sum(x$steps)
-        })
-        )
-  hist(dailySteps, main = "Histogram of the total numbers of daily steps")
+dailySteps <- unlist(lapply(dailyActivity, function(x){
+    sum(x$steps)
+    })
+    )
+hist(dailySteps, main = "Histogram of the total numbers of daily steps")
 ```
 
 For mean and median computation we use.
-```{r} 
+```{r nDigits=10} 
+options(digits=10)
 mean(dailySteps, na.rm=TRUE)
 median(dailySteps, na.rm=TRUE)
 ```
 
 ## What is the average daily activity pattern?
 
+1. *Make a time series plot (i.e. `type = "l"`) of the 5-minute interval (x-axis) and the average number of steps taken, averaged across all days (y-axis)*
+
+2. *Which 5-minute interval, on average across all the days in the dataset, contains the maximum number of steps*
+
+Creating the time series plot:
 ```{r}
-  intervalSteps <-numeric()
-  trash <- lapply(intervalActivity, function(x){
-                  intervalSteps <<- c(intervalSteps, mean(x$steps, na.rm=TRUE))
-                  })
-    plot(unique(activityData$interval), intervalSteps, type='l', xlab ="interval", ylab = "mean step number", main="timeseries plot of mean steps per interval")
+intervalSteps <-numeric()
+trash <- lapply(intervalActivity, function(x){
+    intervalSteps <<- c(intervalSteps, mean(x$steps, na.rm=TRUE))
+    })
+plot(unique(activityData$interval), intervalSteps, type='l', xlab ="interval", ylab = "mean step number", main="timeseries plot of mean steps per interval")
 ```
 
+Find the Interval with the maximum Number of steps:
+```{r}
+unique(activityData$interval[which(intervalSteps == max(intervalSteps))])
+
+```
 
 ## Imputing missing values
+*Note that there are a number of days/intervals where there are missing values (coded as `NA`). The presence of missing days may introduce bias into some calculations or summaries of the data.*
 
-Handling missing values:
-Calculation of rows with `NA` values:
+1. *Calculate and report the total number of missing values in the dataset (i.e. the total number of rows with `NA`s)*
+
+2. *Devise a strategy for filling in all of the missing values in the dataset. The strategy does not need to be sophisticated. For example, you could use the mean/median for that day, or the mean for that 5-minute interval, etc.*
+
+3. *Create a new dataset that is equal to the original dataset but with the missing data filled in.*
+
+4. *Make a histogram of the total number of steps taken each day and Calculate and report the **mean** and **median** total number of steps taken per day. Do these values differ from the estimates from the first part of the assignment? What is the impact of imputing missing data on the estimates of the total daily number of steps?*
+
+First we calculate the number of rows with `NA` values:
 ```{r}
-  rowsWithNa <- nrow(activityData) - nrow(completeActivityData)
-  rowsWithNa
+rowsWithNa <- nrow(activityData) - nrow(completeActivityData)
+rowsWithNa
 ```
 
-We reset the missing values with the mean of the respective 5 minute interval
+We impute the missing values with the mean, among all days, of the respective 5 minute interval.
 
 ```{r}
-  newActivityData <- activityData
-  naVec <- is.na(newActivityData)
-  intervalIdx <- newActivityData[naVec, "interval"]
-  newActivityData[naVec,"steps"] <- intervalSteps[intervalIdx/5 +1]
+newActivityData <- activityData
+naVec <- is.na(newActivityData)
+intervalIdx <- newActivityData[naVec[,"steps"], "interval"]
+newActivityData[naVec[,"steps"],"steps"] <- intervalSteps[match(unique(activityData$interval), intervalIdx)]
 ```
-
 
 Histogram of steps taken per day:
 ```{r}
-  newDailySteps <- numeric()
-  newDailyActivity <- split(newActivityData, newActivityData$date)
-  trash <- lapply(newDailyActivity, function(x){
-        ds <-sum(x$steps)
-        newDailySteps <<- c(newDailySteps, ds)
-        })
-  hist(newDailySteps, main = "Histogram of the total numbers of daily steps using the added values")
+newDailyActivity <- split(newActivityData, newActivityData$date)
+newDailySteps <- unlist(lapply(newDailyActivity, function(x){
+    ds <-sum(x$steps)
+    }))
+hist(newDailySteps, main = "Histogram of the total numbers of daily steps using the added values")
 ```
 
 Let us calculate the daily mean and the median of the steps:
@@ -90,12 +105,20 @@ mean(newDailySteps, na.rm=TRUE)
 median(newDailySteps, na.rm=TRUE)
 ```
 
+The mean did not change, but now the median equals the mean.
+
 ## Are there differences in activity patterns between weekdays and weekends?
 
+*For this part the `weekdays()` function may be of some help here. Use the dataset with the filled-in missing values for this part.*
+
+1. *Create a new factor variable in the dataset with two levels -- “weekday” and “weekend” indicating whether a given date is a weekday or weekend day.*
+
+2. *Make a panel plot containing a time series plot (i.e. `type = "l"`) of the 5-minute interval (x-axis) and the average number of steps taken, averaged across all weekday days or weekend days (y-axis).*
 ```{r}
-  newActivityData$dayType <- as.factor(ifelse(weekdays( as.Date(newActivityData$date)) %in% c("Saturday","Sunday"), "Weekend", "Weekday"))
-  #panel.xyplot(steps~interval|dayType, newActivityData)
-  #densityplot(~steps|dayType, newActivityData)
+library(lattice)
+newActivityData$dayType <- as.factor(ifelse(weekdays( as.Date(newActivityData$date)) %in% c("Saturday","Sunday"), "Weekend", "Weekday"))
+#xyplot(data = head(newActivityData,5000), steps~interval | dayType, screens = list("Weekend", "Weekday"), layout = c(1,2))
+#panel.xyplot(steps~interval|dayType, newActivityData)
+#densityplot(steps|dayType, newActivityData)
 
 ```
-
