@@ -116,10 +116,7 @@ The mean did not change, but now the median equals the mean.
 ```{r}
 library(lattice)
 newActivityData$dayType <- as.factor(ifelse(weekdays( as.Date(newActivityData$date)) %in% c("Saturday","Sunday"), "Weekend", "Weekday"))
-#wrong plot but the principle works!
-#need a data frame that contains, the intervals, the avarage steps
 
-#xyplot(data = head(newActivityData,5000), steps~interval | dayType, screens = list("Weekend", "Weekday"), layout = c(1,2))
 meanList <- lapply(split(newActivityData, newActivityData$dayType), function(x){
     unlist(lapply(split(x,x$interval), function(y){
         mean(y$steps)
