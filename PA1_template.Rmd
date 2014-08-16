@@ -51,10 +51,9 @@ median(dailySteps, na.rm=TRUE)
 
 Creating the time series plot:
 ```{r}
-intervalSteps <-numeric()
-trash <- lapply(intervalActivity, function(x){
-    intervalSteps <<- c(intervalSteps, mean(x$steps, na.rm=TRUE))
-    })
+intervalSteps <- unlist(lapply(intervalActivity, function(x){
+    mean(x$steps, na.rm=TRUE)
+}))
 plot(unique(activityData$interval), intervalSteps, type='l', xlab ="interval", ylab = "mean step number", main="timeseries plot of mean steps per interval")
 ```
 
@@ -117,8 +116,18 @@ The mean did not change, but now the median equals the mean.
 ```{r}
 library(lattice)
 newActivityData$dayType <- as.factor(ifelse(weekdays( as.Date(newActivityData$date)) %in% c("Saturday","Sunday"), "Weekend", "Weekday"))
+#wrong plot but the principle works!
+#need a data frame that contains, the intervals, the avarage steps
+
 #xyplot(data = head(newActivityData,5000), steps~interval | dayType, screens = list("Weekend", "Weekday"), layout = c(1,2))
-#panel.xyplot(steps~interval|dayType, newActivityData)
-#densityplot(steps|dayType, newActivityData)
+meanList <- lapply(split(newActivityData, newActivityData$dayType), function(x){
+    unlist(lapply(split(x,x$interval), function(y){
+        mean(y$steps)
+    }))
+})
+finalDf <- data.frame(intervals = rep(unique(newActivityData$interval),2), meanStep = c(as.vector(meanList[[1]]), as.vector(meanList[[2]])), dayType = c(rep("Weekday", length(meanList[[1]])), rep("Weekend", length(meanList[[2]]))))
+xyplot(data = finalDf, meanStep~intervals | dayType,  layout = c(1,2), type ="l", xlab = "intervals", ylab ="avarage steps")
 
 ```
+
+During the weekends the steps are more *"equally distributed"* during the day, where at the weekdays there is a clear peak around the interval where the maxium is taken.
